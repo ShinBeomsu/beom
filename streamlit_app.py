@@ -6,7 +6,7 @@ st.set_page_config(page_title="자기소개", layout="centered")
 # 프로필 영역
 st.title("👋 신범수 (Shin Beomsu)")
 st.markdown("---")
-
+cccccccccccccccccccccccccccccccccccccc
 # 소개
 col1, col2 = st.columns([1, 2])
 
