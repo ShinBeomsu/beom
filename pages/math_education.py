@@ -28,7 +28,7 @@ col1, col2 = st.columns([3, 1])
 with col1:
     user_guess_text = st.text_input("예상 확률을 입력해 보세요 (%):", "", placeholder="숫자로만 입력하세요", key="init_guess")
 with col2:
-    if st.button("유병률을 0.1%로 낮추면 어떻게 될까요?", key="what_if_prev"):
+    if st.button("유병률을 0.1%로 낮추면?", key="what_if_prev"):
         st.session_state.sensitivity = 0.99
         st.session_state.specificity = 0.99
         st.session_state.prevalence = 0.001
