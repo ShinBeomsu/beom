@@ -51,7 +51,7 @@ if "what_if_clicked" in st.session_state and st.session_state.what_if_clicked:
         color_discrete_sequence=["#636EFA", "#EF553B"]
     )
     fig_ppv.update_layout(
-        title="같은 검사 정확도에서 유병률 감소 시 PPV 변화",
+        title="같은 검사 정확도에서 유병률 감소 시 PPV(양성예측도) 변화",
         yaxis_tickformat=".0%",
         showlegend=False,
         margin=dict(l=0, r=0, t=40, b=0),
