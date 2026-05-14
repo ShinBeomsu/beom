@@ -19,6 +19,12 @@ if "prevalence" not in st.session_state:
     st.session_state.prevalence = 0.10
 if "what_if_clicked" not in st.session_state:
     st.session_state.what_if_clicked = False
+if "guess_submitted" not in st.session_state:
+    st.session_state.guess_submitted = False
+if "guess_result_text" not in st.session_state:
+    st.session_state.guess_result_text = ""
+if "guess_result_type" not in st.session_state:
+    st.session_state.guess_result_type = ""
 
 st.title("👨‍⚕️ 당신은 정확한 진단을 내릴 수 있습니까?")
 st.subheader("🏥 조건부확률을 이용한 질병진단")
@@ -28,13 +34,49 @@ col1, col2 = st.columns([3, 1])
 with col1:
     user_guess_text = st.text_input("예상 확률을 입력해 보세요 (%):", "", placeholder="숫자로만 입력하세요", key="init_guess")
 with col2:
+    st.write("")
+
+if st.button("결과 확인하기", key="guess_submit"):
+    st.session_state.guess_submitted = True
+    actual_guess = 50
+    if user_guess_text.strip() == "":
+        st.session_state.guess_result_text = "먼저 예측 확률을 입력해 주세요."
+        st.session_state.guess_result_type = "warning"
+    else:
+        try:
+            user_guess = float(user_guess_text)
+            if user_guess < 0 or user_guess > 100:
+                st.session_state.guess_result_text = "0에서 100 사이의 숫자를 입력해 주세요."
+                st.session_state.guess_result_type = "warning"
+            elif user_guess > 70:
+                st.session_state.guess_result_text = f"대부분의 사람들이 {user_guess}%라고 생각하지만, 실제로는 약 {actual_guess}%입니다. 왜 내 생각과 다를까요? 아래 미션에서 함께 살펴봅시다."
+                st.session_state.guess_result_type = "error"
+            elif user_guess > actual_guess:
+                st.session_state.guess_result_text = f"당신의 예측은 조금 높습니다. 실제 확률은 약 {actual_guess}%입니다. 아래에서 왜 이런 차이가 나는지 확인해보세요."
+                st.session_state.guess_result_type = "warning"
+            else:
+                st.session_state.guess_result_text = f"통계적 직관이 훌륭합니다! 실제 확률은 약 {actual_guess}%입니다. 아래에서 근거를 함께 분석해봅시다."
+                st.session_state.guess_result_type = "success"
+        except ValueError:
+            st.session_state.guess_result_text = "숫자를 올바르게 입력해 주세요."
+            st.session_state.guess_result_type = "error"
+
+if st.session_state.guess_result_text:
+    if st.session_state.guess_result_type == "warning":
+        st.warning(st.session_state.guess_result_text)
+    elif st.session_state.guess_result_type == "error":
+        st.error(st.session_state.guess_result_text)
+    else:
+        st.success(st.session_state.guess_result_text)
+
+if st.session_state.guess_submitted:
     if st.button("유병률을 0.1%로 낮추면?", key="what_if_prev"):
         st.session_state.sensitivity = 0.99
         st.session_state.specificity = 0.99
         st.session_state.prevalence = 0.001
         st.session_state.what_if_clicked = True
 
-if "what_if_clicked" in st.session_state and st.session_state.what_if_clicked:
+if st.session_state.what_if_clicked:
     ppv_old = 0.99 * 0.01 / (0.99 * 0.01 + 0.01 * 0.99)
     ppv_low = 0.99 * 0.001 / (0.99 * 0.001 + 0.01 * 0.999)
     st.info(f"유병률을 0.1%로 낮추면, 검사 정확도가 99%여도 PPV(양성예측도)는 약 {ppv_low:.1%}로 떨어집니다.")
@@ -60,24 +102,6 @@ if "what_if_clicked" in st.session_state and st.session_state.what_if_clicked:
     fig_ppv.update_traces(textposition="outside")
     st.plotly_chart(fig_ppv, use_container_width=True)
     st.write("유병률이 낮아질수록 실제 양성인 사람 비율(PPV)이 급격히 떨어집니다. 이것이 진단 검사 해석에서 기저율 오류가 중요한 이유입니다.")
-
-if st.button("결과 확인하기", key="guess_submit"):
-    actual_guess = 50
-    if user_guess_text.strip() == "":
-        st.warning("먼저 예측 확률을 입력해 주세요.")
-    else:
-        try:
-            user_guess = float(user_guess_text)
-            if user_guess < 0 or user_guess > 100:
-                st.warning("0에서 100 사이의 숫자를 입력해 주세요.")
-            elif user_guess > 70:
-                st.error(f"대부분의 사람들이 {user_guess}%라고 생각하지만, 실제로는 약 {actual_guess}%입니다. 왜 내 생각과 다를까요? 아래 미션에서 함께 살펴봅시다.")
-            elif user_guess > actual_guess:
-                st.warning(f"당신의 예측은 조금 높습니다. 실제 확률은 약 {actual_guess}%입니다. 아래에서 왜 이런 차이가 나는지 확인해보세요.")
-            else:
-                st.success(f"통계적 직관이 훌륭합니다! 실제 확률은 약 {actual_guess}%입니다. 아래에서 근거를 함께 분석해봅시다.")
-        except ValueError:
-            st.error("숫자를 올바르게 입력해 주세요.")
 
 st.markdown("---")
 
@@ -201,6 +225,38 @@ with tab1:
     with c2:
         st.metric("음성일 때 건강할 확률 (NPV)", f"{npv:.2%}")
         st.caption("검사 음성 → 실제 질병 없을 확률")
+
+    st.subheader("📊 상세 데이터")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.write("**1) 전체 인구 현황 (10,000명)**")
+        prevalence_data = {
+            "구분": ["질병 있음", "질병 없음", "합계"],
+            "인원 수": [disease_positive, disease_negative, total_people]
+        }
+        st.dataframe(pd.DataFrame(prevalence_data), use_container_width=True, hide_index=True)
+
+    with col2:
+        st.write("**2) 검사의 성능**")
+        performance_data = {
+            "지표": ["민감도", "특이도"],
+            "정의": ["질병 있을 때 양성으로 나올 확률", "질병 없을 때 음성으로 나올 확률"],
+            "값": [f"{sensitivity:.0%}", f"{specificity:.0%}"]
+        }
+        st.dataframe(pd.DataFrame(performance_data), use_container_width=True, hide_index=True)
+
+    st.subheader("📋 검사 결과 분류표")
+    
+    classification_data = {
+        "": ["질병 있음", "질병 없음", "합계"],
+        "검사 양성(+)": [true_positive, false_positive, test_positive],
+        "검사 음성(-)": [false_negative, true_negative, test_negative],
+        "합계": [disease_positive, disease_negative, total_people]
+    }
+    classification_df = pd.DataFrame(classification_data).set_index("")
+    st.dataframe(classification_df, use_container_width=True)
 
     st.markdown("---")
 
@@ -375,40 +431,147 @@ with tab1:
 
     st.markdown("---")
 
-    # 데이터 테이블
-    st.subheader("📊 상세 데이터")
+    st.subheader("📊 검사의 네 가지 결과와 민감도·특이도 영향")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown("**🔴 진양성**")
+        st.write("- 민감도 높을 때 증가")
+        st.write("- 특이도 높을 때도 증가")
+    with c2:
+        st.markdown("**🟠 위양성**")
+        st.write("- 특이도 낮을 때 증가")
+        st.write("- 특이도 높을 때 감소")
+    with c3:
+        st.markdown("**🔵 위음성**")
+        st.write("- 민감도 낮을 때 증가")
+        st.write("- 민감도 높을 때 감소")
+    with c4:
+        st.markdown("**🟢 진음성**")
+        st.write("- 특이도 높을 때 증가")
+        st.write("- 특이도 낮을 때 감소")
 
-    col1, col2 = st.columns(2)
+    st.write("""
+    - **특이도가 낮을 때**는 건강한 사람이 양성 판정을 받을 확률인 **위양성**이 커집니다.
+    - **특이도가 높을 때**는 건강한 사람이 음성 판정을 받을 확률인 **진음성**이 커집니다.
+    - **민감도가 낮을 때**는 실제 환자가 음성 판정을 받을 확률인 **위음성**이 커집니다.
+    - **민감도가 높을 때**는 실제 환자가 양성 판정을 받을 확률인 **진양성**이 커집니다.
+    """)
 
-    with col1:
-        st.write("**1) 전체 인구 현황 (10,000명)**")
-        prevalence_data = {
-            "구분": ["질병 있음", "질병 없음", "합계"],
-            "인원 수": [disease_positive, disease_negative, total_people]
-        }
-        st.dataframe(pd.DataFrame(prevalence_data), use_container_width=True, hide_index=True)
+    st.subheader("🦠 코로나19 검사 예시")
+    st.write("코로나19 신속항원키트는 보통 특이도가 높은 편이어서 거짓 양성은 적지만, 민감도가 낮아 실제 환자가 음성으로 나오는 **위음성**이 많을 수 있습니다.")
+    st.write("반면 PCR 검사는 민감도와 특이도 모두 높아, 위음성과 위양성 비율이 모두 적어 검사 결과 신뢰도가 높습니다. 그래서 의심 환자에게는 PCR을 추가로 검사하는 경우가 많습니다.")
 
-    with col2:
-        st.write("**2) 검사의 성능**")
-        performance_data = {
-            "지표": ["민감도", "특이도"],
-            "정의": ["질병 있을 때 양성으로 나올 확률", "질병 없을 때 음성으로 나올 확률"],
-            "값": [f"{sensitivity:.0%}", f"{specificity:.0%}"]
-        }
-        st.dataframe(pd.DataFrame(performance_data), use_container_width=True, hide_index=True)
+    # 민감도와 특이도의 영향을 보여주는 그래프
+    st.subheader("📈 민감도·특이도 변화에 따른 검사 결과 비율")
 
-    st.markdown("---")
+    # 민감도 변화 그래프 (절대값 기준으로 차이 명확하게)
+    sensitivity_range = [0.5, 0.7, 0.8, 0.9, 0.95, 0.99]
+    specificity_fixed = 0.95
+    prevalence_fixed = 0.05
+    population = 10000
+    disease_positive = int(population * prevalence_fixed)
 
-    st.subheader("📋 검사 결과 분류표")
-    
-    classification_data = {
-        "": ["질병 있음", "질병 없음", "합계"],
-        "검사 양성(+)": [true_positive, false_positive, test_positive],
-        "검사 음성(-)": [false_negative, true_negative, test_negative],
-        "합계": [disease_positive, disease_negative, total_people]
-    }
-    classification_df = pd.DataFrame(classification_data).set_index("")
-    st.dataframe(classification_df, use_container_width=True)
+    tp_counts = []
+    fn_counts = []
+    fp_counts = []
+    tn_counts = []
+    ppv_rates = []
+
+    for sens in sensitivity_range:
+        tp = int(round(sens * disease_positive))
+        fn = disease_positive - tp
+        fp = int(round((1 - specificity_fixed) * (population - disease_positive)))
+        tn = population - tp - fn - fp
+        tp_counts.append(tp)
+        fn_counts.append(fn)
+        fp_counts.append(fp)
+        tn_counts.append(tn)
+        ppv_rates.append(tp / (tp + fp) if (tp + fp) > 0 else 0)
+
+    fig_sensitivity = go.Figure()
+    fig_sensitivity.add_trace(go.Scatter(x=sensitivity_range, y=tp_counts, mode='lines+markers', name='진양성', line=dict(color='red')))
+    fig_sensitivity.add_trace(go.Scatter(x=sensitivity_range, y=fn_counts, mode='lines+markers', name='위음성', line=dict(color='blue')))
+    fig_sensitivity.add_trace(go.Scatter(x=sensitivity_range, y=fp_counts, mode='lines+markers', name='위양성', line=dict(color='orange')))
+    fig_sensitivity.add_trace(go.Scatter(x=sensitivity_range, y=tn_counts, mode='lines+markers', name='진음성', line=dict(color='green')))
+    fig_sensitivity.update_layout(
+        title="민감도 변화에 따른 검사 결과 인원수 (특이도 95%, 유병률 5%, 전체 10,000명)",
+        xaxis_title="민감도",
+        yaxis_title="인원 수",
+        legend_title="결과 유형"
+    )
+    st.plotly_chart(fig_sensitivity, use_container_width=True)
+
+    # PPV 변화 그래프 (민감도의 중요성 강조)
+    fig_ppv = go.Figure()
+    fig_ppv.add_trace(go.Scatter(x=sensitivity_range, y=ppv_rates, mode='lines+markers', name='양성 예측도 (PPV)', line=dict(color='purple', width=3)))
+    fig_ppv.update_layout(
+        title="민감도 변화에 따른 양성 예측도 (PPV) 변화 (특이도 95%, 유병률 5%)",
+        xaxis_title="민감도",
+        yaxis_title="PPV",
+        yaxis_tickformat=".1%",
+        showlegend=False
+    )
+    st.plotly_chart(fig_ppv, use_container_width=True)
+
+    st.write("**그래프 해석:**")
+    st.write("- 민감도가 50%일 때는 실제 환자 500명 중 250명이 진양성, 250명이 위음성입니다.")
+    st.write("- 민감도가 99%일 때는 진양성이 495명으로 늘고 위음성은 5명으로 줄어들어, 실제 환자를 놓칠 확률이 크게 감소합니다.")
+    st.write("- 유병률이 5%인 상황에서 민감도 변화는 위음성 수에 명확한 영향을 줍니다.")
+    st.write("- PPV가 높아질수록 양성 판정을 받은 사람 중 실제 환자의 비율이 커짐을 확인할 수 있습니다.")
+
+    # 특이도 변화 그래프 (유병률 5%로 조정)
+    specificity_range = [0.5, 0.7, 0.8, 0.9, 0.95, 0.99]  # 주요 값들로 설정
+    sensitivity_fixed = 0.95  # 고정된 민감도
+
+    true_positive_rates_spec = []
+    false_positive_rates_spec = []
+    false_negative_rates_spec = []
+    true_negative_rates_spec = []
+    ppv_rates_spec = []
+
+    for spec in specificity_range:
+        tp = sensitivity_fixed * prevalence_fixed
+        fp = (1 - spec) * (1 - prevalence_fixed)
+        fn = (1 - sensitivity_fixed) * prevalence_fixed
+        tn = spec * (1 - prevalence_fixed)
+        total = tp + fp + fn + tn
+        true_positive_rates_spec.append(tp / total)
+        false_positive_rates_spec.append(fp / total)
+        false_negative_rates_spec.append(fn / total)
+        true_negative_rates_spec.append(tn / total)
+        ppv_rates_spec.append(tp / (tp + fp) if (tp + fp) > 0 else 0)
+
+    fig_specificity = go.Figure()
+    fig_specificity.add_trace(go.Scatter(x=specificity_range, y=true_positive_rates_spec, mode='lines+markers', name='진양성', line=dict(color='red')))
+    fig_specificity.add_trace(go.Scatter(x=specificity_range, y=false_positive_rates_spec, mode='lines+markers', name='위양성', line=dict(color='orange')))
+    fig_specificity.add_trace(go.Scatter(x=specificity_range, y=false_negative_rates_spec, mode='lines+markers', name='위음성', line=dict(color='blue')))
+    fig_specificity.add_trace(go.Scatter(x=specificity_range, y=true_negative_rates_spec, mode='lines+markers', name='진음성', line=dict(color='green')))
+    fig_specificity.update_layout(
+        title="특이도 변화에 따른 검사 결과 비율 (민감도 95%, 유병률 5%)",
+        xaxis_title="특이도",
+        yaxis_title="비율",
+        yaxis_tickformat=".1%",
+        legend_title="결과 유형"
+    )
+    st.plotly_chart(fig_specificity, use_container_width=True)
+
+    # 특이도에 따른 PPV 변화 그래프
+    fig_ppv_spec = go.Figure()
+    fig_ppv_spec.add_trace(go.Scatter(x=specificity_range, y=ppv_rates_spec, mode='lines+markers', name='양성 예측도 (PPV)', line=dict(color='purple', width=3)))
+    fig_ppv_spec.update_layout(
+        title="특이도 변화에 따른 양성 예측도 (PPV) 변화",
+        xaxis_title="특이도",
+        yaxis_title="PPV",
+        yaxis_tickformat=".1%",
+        showlegend=False
+    )
+    st.plotly_chart(fig_ppv_spec, use_container_width=True)
+
+    st.write("**그래프 해석:**")
+    st.write("- **민감도가 낮을 때(50%) 위음성이 높고(4.75%), 민감도가 높을 때(99%) 위음성이 낮아집니다(0.05%).** 실제 환자를 놓치는 비율이 크게 줄어듭니다.")
+    st.write("- **특이도가 낮을 때(50%) 위양성이 높고(4.75%), 특이도가 높을 때(99%) 위양성이 낮아집니다(0.05%).** 건강한 사람을 오진하는 비율이 크게 줄어듭니다.")
+    st.write("- **PPV 그래프**에서 민감도 50%일 때는 PPV가 9.5%밖에 안 되지만, 99%일 때는 67.7%로 크게 상승합니다.")
+    st.write("- 코로나19 신속항원키트처럼 민감도가 낮으면 위음성이 많아지고, 특이도가 낮으면 위양성이 많아집니다.")
 
 # ============================================================
 # TAB 2: 수학적 원리
@@ -466,6 +629,77 @@ with tab2:
     - 이는 **기저율 오류(Base Rate Fallacy)**의 좋은 예입니다.
     - 동일한 검사 성능이어도 **유병률에 따라 신뢰도가 크게 달라집니다.**
     """)
+    st.markdown("---")
+    st.subheader("📊 검사의 네 가지 결과와 민감도·특이도 영향")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown("**🔴 진양성**")
+        st.write("- 민감도 높을 때 증가")
+        st.write("- 특이도 높을 때도 증가")
+    with c2:
+        st.markdown("**🟠 위양성**")
+        st.write("- 특이도 낮을 때 증가")
+        st.write("- 특이도 높을 때 감소")
+    with c3:
+        st.markdown("**🔵 위음성**")
+        st.write("- 민감도 낮을 때 증가")
+        st.write("- 민감도 높을 때 감소")
+    with c4:
+        st.markdown("**🟢 진음성**")
+        st.write("- 특이도 높을 때 증가")
+        st.write("- 특이도 낮을 때 감소")
+
+    st.write("""
+    - **특이도가 낮을 때**는 건강한 사람이 양성 판정을 받을 확률인 **위양성**이 커집니다.
+    - **특이도가 높을 때**는 건강한 사람이 음성 판정을 받을 확률인 **진음성**이 커집니다.
+    - **민감도가 낮을 때**는 실제 환자가 음성 판정을 받을 확률인 **위음성**이 커집니다.
+    - **민감도가 높을 때**는 실제 환자가 양성 판정을 받을 확률인 **진양성**이 커집니다.
+    """)
+
+    st.markdown("---")
+    st.header("📝 베이즈 정리: 수식의 의미 조립하기")
+    
+    st.subheader("1. 공식의 구성 요소 매칭")
+    st.write("베이즈 정리의 각 부분은 우리가 시뮬레이션에서 본 어떤 집단에 해당할까요?")
+
+    q1 = st.selectbox("분자(Numerator)인 'P(+|D) * P(D)'는 무엇을 의미합니까?", 
+                      ["선택하세요", "위양성(건강한데 양성)", "진양성(환자인데 양성)", "진음성(건강한데 음성)"])
+
+    if q1 == "진양성(환자인데 양성)":
+        st.success("맞습니다! 실제 병이 있을 확률과 그 사람이 양성이 나올 확률의 곱입니다.")
+    elif q1 != "선택하세요":
+        st.error("다시 생각해 보세요. 병(D)이 있는 상태에서 양성(+)이 나올 확률입니다.")
+
+    st.markdown("---")
+
+    st.subheader("2. 확률을 인원수로 바꿔보기 (자연 빈도)")
+    st.write(f"전체 **1,000명**이 있다고 가정할 때, 현재 설정값({prevalence:.2%})을 대입하면:")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.write(f"① 실제 환자 수: 약 {1000 * prevalence:.1f}명")
+        st.write(f"② 그중 양성 판정(진양성): **{1000 * prevalence * sensitivity:.1f}명**")
+    with c2:
+        st.write(f"③ 실제 건강한 사람 수: 약 {1000 * (1-prevalence):.1f}명")
+        st.write(f"④ 그중 양성 판정(위양성): **{1000 * (1-prevalence) * (1-specificity):.1f}명**")
+
+    st.info(f"결국 PPV는 **② / (② + ④)** 의 비율이 됩니다. 수식과 비교해 보세요!")
+
+    st.markdown("---")
+    st.subheader("✅ 이해 확인 문제")
+    st.write("아래에서 베이즈 정리를 얼마나 잘 이해했는지 확인해 보세요.")
+
+    q2 = st.radio("PPV 계산에서 분모에 포함되는 항목은 무엇인가요?", ["선택하세요", "진양성 + 위양성", "진양성 + 진음성", "위음성 + 진음성"], key="bayes_check1")
+    if q2 == "진양성 + 위양성":
+        st.success("정답입니다! 양성 판정을 받은 전체 집단이 분모입니다.")
+    elif q2 != "선택하세요":
+        st.error("틀렸습니다. PPV는 양성 판정을 받은 사람 전체 대비 실제 환자의 비율입니다.")
+
+    q3 = st.selectbox("자연 빈도에서 PPV는 어떤 비율입니까?", ["선택하세요", "② / (② + ④)", "① / (① + ③)", "④ / (② + ④)"], key="bayes_check2")
+    if q3 == "② / (② + ④)":
+        st.success("좋습니다! 자연 빈도로도 PPV를 정확히 표현했습니다.")
+    elif q3 != "선택하세요":
+        st.error("다시 확인해 보세요. PPV는 진양성(②) 비율을 양성 전체(② + ④)로 나눈 값입니다.")
 
 # ============================================================
 # TAB 3: 연습 문제
@@ -475,6 +709,21 @@ with tab3:
     # 학생 연습 문제
     st.header("✏️ 학생 연습 문제")
     st.write("아래의 문제를 직접 풀어보고 답을 입력하여 확인해 보세요!")
+
+    st.markdown("---")
+
+    st.subheader("📌 문제 0: 직관 확인")
+    st.write("민감도가 99%라면, 양성 판정을 받은 사람이 환자일 확률도 반드시 99%일까요?")
+
+    answer0 = st.radio(
+        "정답을 고르세요:",
+        ["선택하세요", "예, 정확도가 높으면 항상 그렇습니다.", "아니요, 유병률에 따라 달라집니다."],
+        key="problem0"
+    )
+    if answer0 == "아니요, 유병률에 따라 달라집니다.":
+        st.success("정답입니다! 민감도는 환자를 잘 찾아내는 능력이고, PPV는 유병률에 따라 달라집니다.")
+    elif answer0 != "선택하세요":
+        st.error("틀렸습니다. 양성 판정의 실제 환자 비율은 유병률에 영향을 받습니다.")
 
     st.markdown("---")
 
@@ -572,51 +821,37 @@ with tab3:
 
     st.markdown("---")
 
-    # 문제 3
-    st.subheader("📌 문제 3: 다양한 파라미터")
+    st.subheader("📌 문제 3: 비판적 사고")
     st.write("""
-    새로운 질병 검사:
-    - **민감도**: 92%
-    - **특이도**: 88%
-    - **유병률**: 3%
-
-    **질문**: 검사가 양성으로 나왔을 때, 실제로 질병이 있을 확률은?
+    한 제약회사에서 **민감도 99.9%, 특이도 99.9%**의 검사기를 개발했습니다.
+    하지만 이 병의 유병률은 **0.001%(10만 명당 1명)**입니다.
     """)
 
-    col1, col2 = st.columns([1, 1])
+    sensitivity_3 = 0.999
+    specificity_3 = 0.999
+    prevalence_3 = 0.00001
+    sample_size_3 = 100000
 
-    with col1:
-        sensitivity_3 = 0.92
-        specificity_3 = 0.88
-        prevalence_3 = 0.03
-        
-        tp_3 = 1000 * prevalence_3 * sensitivity_3
-        fp_3 = 1000 * (1 - prevalence_3) * (1 - specificity_3)
-        ppv_3 = tp_3 / (tp_3 + fp_3)
-        
-        user_answer_3 = st.number_input(
-            "답 입력 (소수점 셋째 자리까지, 예: 0.150):",
-            min_value=0.0,
-            max_value=1.0,
-            step=0.001,
-            key="problem3"
-        )
-        
-        if st.button("정답 확인", key="check3"):
-            if abs(user_answer_3 - ppv_3) < 0.005:
-                st.success(f"✅ 정답입니다! 양성 예측도 = {ppv_3:.3f} ({ppv_3:.1%})")
-                st.write(f"""
-                **계산 과정:**
-                - 실제 질병 있는 경우: 1000명 중 {int(prevalence_3*1000)}명
-                - 양성 검사: {int(tp_3)}명
-                - 위양성: {int(fp_3)}명
-                - PPV = {int(tp_3)} / ({int(tp_3)} + {int(fp_3)}) = **{ppv_3:.1%}**
-                
-                **통찰**: 민감도가 높아도(92%) 유병률이 매우 낮으면(3%), 양성 예측도가 낮습니다!
-                """)
-            else:
-                st.error(f"❌ 틀렸습니다. 정답: {ppv_3:.3f} ({ppv_3:.1%})")
-                st.write(f"당신의 답: {user_answer_3:.3f}")
+    tp_3 = sample_size_3 * prevalence_3 * sensitivity_3
+    fp_3 = sample_size_3 * (1 - prevalence_3) * (1 - specificity_3)
+    ppv_3 = tp_3 / (tp_3 + fp_3) if (tp_3 + fp_3) > 0 else 0
+
+    logic_guess = st.radio(
+        "이 검사기에서 양성이 나온 사람 중 실제 환자의 비율은 90%를 넘을 것이다.",
+        ["선택하세요", "참", "거짓"],
+        key="logic_guess"
+    )
+
+    if st.button("정답 확인", key="logic_check"):
+        if logic_guess == "선택하세요":
+            st.warning("먼저 선택지를 골라주세요.")
+        elif logic_guess == "거짓":
+            st.success("정답입니다! 실제 확률은 약 1%에 불과합니다.")
+            st.write(f"- 실제 확률(PPV)은 약 {ppv_3:.3f} ({ppv_3:.1%})입니다.")
+            st.write("- 유병률이 극히 낮아 양성 판정을 받아도 실제 환자 비율이 매우 낮습니다.")
+        else:
+            st.error("틀렸습니다. 높은 민감도와 특이도에도 불구하고, 유병률이 낮으면 PPV는 매우 낮습니다.")
+            st.write(f"- 실제 확률(PPV)은 약 {ppv_3:.3f} ({ppv_3:.1%})입니다.")
 
     st.markdown("---")
 
@@ -692,19 +927,19 @@ with tab3:
     st.subheader("✏️ 직접 수식 작성")
     formula_1 = st.text_area(
         "1) 분자 계산식 입력",
-        value="예: 0.85 × 0.05",
+        value="",
         height=80,
         key="bonus_formula_1"
     )
     formula_2 = st.text_area(
         "2) 분모 계산식 입력",
-        value="예: (0.85 × 0.05) + ((1-0.95) × (1-0.05))",
+        value="",
         height=80,
         key="bonus_formula_2"
     )
     formula_3 = st.text_area(
         "3) PPV 최종 계산식 입력",
-        value="예: 0.0425 / 0.0475",
+        value="",
         height=80,
         key="bonus_formula_3"
     )
@@ -762,8 +997,9 @@ with tab3:
     st.markdown("---")
 
     st.subheader("📊 정답 예시")
-    st.write(f"- 분자 = {sens_input:.2f} × {prev_input:.2f} = {numerator:.4f}")
-    st.write(f"- (1-특이도) × (1-유병률) = {1-spec_input:.2f} × {1-prev_input:.2f} = {false_pos_rate:.4f}")
-    st.write(f"- 분모 = {numerator:.4f} + {false_pos_rate:.4f} = {denominator:.4f}")
-    st.write(f"- PPV = {numerator:.4f} / {denominator:.4f} = {ppv_bonus:.4f} ({ppv_bonus:.2%})")
-
+    st.write("아래 예시는 위 문제와 다른 수치를 사용한 계산 예시입니다.")
+    st.write("- 예시 수치: 민감도 85%, 특이도 95%, 유병률 5%")
+    st.write("- 분자 = 0.85 × 0.05 = 0.0425")
+    st.write("- (1-특이도) × (1-유병률) = 0.05 × 0.95 = 0.0475")
+    st.write("- 분모 = 0.0425 + 0.0475 = 0.0900")
+    st.write("- PPV = 0.0425 / 0.0900 = 0.4722 (47.22%)")
