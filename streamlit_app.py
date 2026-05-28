@@ -1,82 +1,82 @@
 import streamlit as st
 
-# 페이지 설정
-st.set_page_config(page_title="자기소개", layout="centered")
+st.set_page_config(
+    page_title="조건부확률을 이용한 질병진단",
+    page_icon="📘",
+    layout="wide"
+)
 
-# 프로필 영역
-st.title("👋 신범수 (Shin Beomsu)")
-st.markdown("---")
-
-# 소개
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    st.markdown("### 📌 기본 정보")
-    st.write("**직책**: 개발자")
-    st.write("**관심사**: 웹 개발, 데이터 분석")
-    st.write("**위치**: 한국")
-
-with col2:
-    st.markdown("### 🎯 소개")
-    st.write(
-        """
-        안녕하세요! 저는 신범수입니다.
-        Streamlit을 이용한 웹 애플리케이션 개발을 하고 있습니다.
-        새로운 기술을 배우고 창의적인 솔루션을 만드는 것을 좋아합니다.
-        """
-    )
+st.title("📘 조건부확률을 이용한 질병진단")
+st.write("이 페이지는 질병 검사의 핵심 개념을 쉽게 이해하는 안내 페이지입니다. 앞으로의 시뮬레이션과 시각화는 이 용어들을 바탕으로 구성됩니다.")
 
 st.markdown("---")
 
-# 경험 및 기술
-st.header("💼 경험 및 기술")
-
-with st.expander("사용 기술", expanded=True):
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("**프로그래밍 언어**")
-        st.write("- Python")
-        st.write("- JavaScript")
-        st.write("- HTML/CSS")
-    
-    with col2:
-        st.markdown("**프레임워크 & 라이브러리**")
-        st.write("- Streamlit")
-        st.write("- Pandas")
-        st.write("- NumPy")
+st.subheader("🎯 이번 수업에서 배우는 것")
+st.write(
+    "- 검사 성능을 나타내는 **민감도**, **특이도**의 뜻\n"
+    "- 전체 인구에서 질병이 실제로 얼마나 많은지를 나타내는 **유병률**\n"
+    "- 검사 결과를 네 가지로 나누는 **진양성, 진음성, 위양성, 위음성**\n"
+    "- 이 개념들이 왜 진단 판단에서 중요한지"
+)
 
 st.markdown("---")
 
-# 연락처
-st.header("📞 연락처")
+st.subheader("🧠 핵심 용어 쉽게 표현하자면?")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    if st.button("📧 이메일"):
-        st.info("example@example.com")
+    st.markdown("### 민감도 (Sensitivity)")
+    st.write("**질병이 실제로 있을 때, 검사를 잘 잡아내는 능력**입니다.")
+    st.write("예를 들어, 실제로 병이 있는 사람 중 양성으로 판정되는 비율을 말합니다.")
+    st.caption("쉽게 말하면: '실제 환자를 놓치지 않는 능력'")
 
 with col2:
-    if st.button("🐙 GitHub"):
-        st.info("https://github.com/ShinBeomsu")
+    st.markdown("### 특이도 (Specificity)")
+    st.write("**질병이 실제로 없을 때, 정상으로 올바르게 판단하는 능력**입니다.")
+    st.write("건강한 사람 중 음성으로 판정되는 비율을 말합니다.")
+    st.caption("쉽게 말하면: '건강한 사람을 잘못 양성으로 보지 않는 능력'")
 
 with col3:
-    if st.button("💼 LinkedIn"):
-        st.info("https://linkedin.com")
+    st.markdown("### 유병률 (Prevalence)")
+    st.write("**전체 인구 중 실제로 질병을 가진 사람의 비율**입니다.")
+    st.write("유병률이 낮으면, 같은 검사 정확도라도 양성 결과가 실제 환자일 가능성이 더 낮아질 수 있습니다.")
+    st.caption("쉽게 말하면: '병이 있는 사람이 전체에서 얼마나 흔한가'")
 
 st.markdown("---")
 
-# 사이드바
-st.sidebar.markdown("## 📋 메뉴")
-page = st.sidebar.radio("이동하기:", ["홈", "프로젝트", "블로그"])
+st.subheader("✅ 검사 결과의 네 가지 경우")
 
-if page == "홈":
-    st.sidebar.write("현재 홈페이지를 보고 있습니다.")
-elif page == "프로젝트":
-    st.sidebar.write("프로젝트 페이지로 이동하려면 업데이트가 필요합니다.")
-else:
-    st.sidebar.write("블로그 페이지로 이동하려면 업데이트가 필요합니다.")
+st.write("검사 결과는 실제 상태와 판정 결과를 함께 보면서 네 가지로 나눌 수 있습니다.")
+
+case_cols = st.columns(2)
+
+with case_cols[0]:
+    st.markdown("#### 1. 진양성 (True Positive)")
+    st.write("실제로 병이 있고, 검사도 양성으로 맞힌 경우입니다.")
+    st.write("예: 실제 환자이며 검사 결과도 양성")
+
+with case_cols[1]:
+    st.markdown("#### 2. 진음성 (True Negative)")
+    st.write("실제로 병이 없고, 검사도 음성으로 맞힌 경우입니다.")
+    st.write("예: 건강한 사람이며 검사 결과도 음성")
+
+with case_cols[0]:
+    st.markdown("#### 3. 위양성 (False Positive)")
+    st.write("실제로는 병이 없는데, 검사에서 양성으로 나온 경우입니다.")
+    st.write("예: 건강한 사람인데 오진된 경우")
+
+with case_cols[1]:
+    st.markdown("#### 4. 위음성 (False Negative)")
+    st.write("실제로는 병이 있는데, 검사에서 음성으로 나온 경우입니다.")
+    st.write("예: 실제 환자인데 놓친 경우")
 
 st.markdown("---")
-st.markdown("<div style='text-align: center'><small>© 2026 신범수. All rights reserved.</small></div>", unsafe_allow_html=True)
+
+st.subheader("💡 왜 이 용어를 알아야 하나요?")
+st.write(
+    "검사의 정확도가 좋아 보여도, 유병률이 낮으면 양성 결과가 실제 환자일 가능성이 낮아질 수 있습니다.\n"
+    "또한 위양성이나 위음성을 이해하면, 검사 결과를 잘못 해석하는 문제를 줄일 수 있습니다."
+)
+
+st.info("다음 단계에서는 실제 숫자와 그래프를 보면서 이 개념들이 어떻게 작동하는지 확인해봅니다.")
