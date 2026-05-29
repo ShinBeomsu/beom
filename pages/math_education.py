@@ -406,9 +406,24 @@ with tab1:
 
     fig_venn = draw_proportional_venn(disease_positive, test_positive, true_positive, total_people)
 
+    def render_outcome_percentages():
+        outcome_summary = pd.DataFrame({
+            "결과": ["진양성", "위양성", "위음성", "진음성"],
+            "명수": [true_positive, false_positive, false_negative, true_negative],
+            "퍼센트": [
+                f"{true_positive / total_people:.1%}",
+                f"{false_positive / total_people:.1%}",
+                f"{false_negative / total_people:.1%}",
+                f"{true_negative / total_people:.1%}",
+            ],
+        })
+        st.write("**전체 10,000명 기준 4가지 결과 비율**")
+        st.dataframe(outcome_summary, use_container_width=True, hide_index=True)
+
     if chart_choice == "Waffle Chart":
         st.write("**Waffle Chart: 1,000명 분포**")
         st.plotly_chart(fig_waffle, use_container_width=True)
+        render_outcome_percentages()
         c1, c2, c3, c4 = st.columns(4)
         c1.markdown("🔴 진양성")
         c2.markdown("🟠 위양성")
@@ -422,12 +437,14 @@ with tab1:
     elif chart_choice == "Sankey Diagram":
         st.write("**Sankey Diagram: 인구 흐름**")
         st.plotly_chart(fig_sankey, use_container_width=True)
+        render_outcome_percentages()
     else:
         st.write("**Venn Diagram: 질병 집단 D와 양성 집단 +의 겹침(D ∩ +)**")
         st.write("왼쪽 원은 실제로 병이 있는 사람, 오른쪽 원은 검사에서 양성 판정을 받은 사람입니다.")
         st.write("겹치는 부분 D ∩ +는 검사에서 양성이면서 실제로도 병이 있는 사람, 즉 진양성입니다.")
         st.write("이 부분이 전체 양성 집단에서 얼마나 큰지 보면, 검사 결과의 신뢰도를 이해하기 쉽습니다.")
         st.plotly_chart(fig_venn, use_container_width=True)
+        render_outcome_percentages()
 
     st.markdown("---")
 
